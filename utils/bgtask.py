@@ -1,5 +1,8 @@
 import sys
 import re
+import logging
+
+log = logging.getLogger(__name__)
 
 class BGTask:
     def __init__(self, id = '', project = '', type = '', branch = '', branch_type = '', pull_request = '', status = '', submitter = '', time = 0):
@@ -58,9 +61,7 @@ class BGTask:
                 self.id = input
 
         except IndexError as e:
-            print('Index Error while handling the following input:')
-            print(input)
-            print(e)
+            log.error('Index Error while handling the following input: {} (Error message: {})'.format(input, e))
             sys.exit()
 
 
@@ -85,11 +86,8 @@ class BGStep:
                 elif (item.strip().startswith('time')):
                     self.time = int(re.search('time=([0-9]*)ms', item).group(1))
         except IndexError as e:
-            print('Index Error while handling the following line:')
-            print(line)
-            print(e)
+            log.error('Index Error while handling the following input: {} (Error message: {})'.format(input, e))
             sys.exit()
-
 
 
 # Project analysis
