@@ -1,17 +1,23 @@
-from errno import ESTALE
 import os
 import sys
 import csv
 import logging
+from datetime import date, datetime
 import utils.cli as cli
 import utils.io as io
 import utils.log_parser as log_parser
 
 args = cli.command_parsing()
 if args.verbose == True:
-    logging.basicConfig(level = 'DEBUG')
+    logging.basicConfig(
+        format = '%(asctime)s %(levelname)-8s %(message)s',
+        level = logging.DEBUG,
+        datefmt = '%Y-%m-%d %H:%M:%S')
 else:
-    logging.basicConfig(level = os.environ.get('LOGLEVEL', 'INFO'))
+    logging.basicConfig(
+        format = '%(asctime)s %(levelname)-8s %(message)s',
+        level = os.environ.get('LOGLEVEL', 'INFO'),
+        datefmt = '%Y-%m-%d %H:%M:%S')
 log = logging.getLogger(__name__)
 log.info('Processing the input argument to get the file list')
 files = io.extract_file_list(args.input)
@@ -23,13 +29,13 @@ match args.command:
         log.info('Write CSV file {}'.format(args.output))
         with open (args.output, 'w') as f:
             writer = csv.writer(f)
-            header = ['id', 'project', 'type', 'branch', 'branch_type', 'pull_request', 'status', 'submitter', 'time']
+            header = ['id', 'project', 'type', 'branch', 'branch_type', 'pull_request', 'status', 'submitter', 'time', 'start', 'end']
             writer.writerow(header)
 
             c = 0
             for task in tasks.values():
                 try:
-                    writer.writerow([task.id, task.project, task.type, task.branch, task.branch_type, task.pull_request, task.status, task.submitter, task.time])
+                    writer.writerow([task.id, task.project, task.type, task.branch, task.branch_type, task.pull_request, task.status, task.submitter, task.time, task.start, task.end])
                     c += 1
                     if c % 1000 == 0:
                         log.debug('{} / {} tasks written'.format(c, len(tasks)))
@@ -75,6 +81,9 @@ match args.command:
         count_REPORT_time = 0
         average_REPORT_time = 0
 
+        log_start_time = datetime.now()
+        log_end_time = datetime.strptime('2000.01.01 00:00:00', '%Y.%m.%d %H:%M:%S')
+
         # TODO: collect more than the longest task, a top-10 would be more useful
         top_longest = ''
         top_longest_time = 0
@@ -82,6 +91,10 @@ match args.command:
         long_steps = {}
 
         for task in tasks.values():
+            if isinstance(task.start, date) and task.start < log_start_time:
+                log_start_time = task.start
+            if isinstance(task.end, date) and task.end > log_end_time:
+                log_end_time = task.end
             match task.type:
                 case 'REPORT':
                     try:
@@ -121,7 +134,8 @@ match args.command:
             f.write('\n')
             # TODO: implement time window (requires tasks start and end date)
             f.write('Time window\n')
-            f.write('   @NotImplemented\n')
+            f.write('   From {}\n'.format(log_start_time))
+            f.write('   To   {}\n'.format(log_end_time))
             f.write('\n')
             f.write('Background tasks\n')
             f.write('   REPORT: {}\n'.format(tasks_REPORT))
