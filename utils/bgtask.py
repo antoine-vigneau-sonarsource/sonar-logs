@@ -1,11 +1,12 @@
 import sys
 import re
 import logging
+from datetime import datetime
 
 log = logging.getLogger(__name__)
 
 class BGTask:
-    def __init__(self, id = '', project = '', type = '', branch = '', branch_type = '', pull_request = '', status = '', submitter = '', time = 0):
+    def __init__(self, id = '', project = '', type = '', branch = '', branch_type = '', pull_request = '', status = '', submitter = '', time = 0, start = '', end = ''):
         self.id = id
         self.project = project
         self.type = type
@@ -15,6 +16,8 @@ class BGTask:
         self.status = status
         self.submitter = submitter
         self.time = time
+        self.start = start
+        self.end = end
         self.steps = []
 
     def __init__(self, input):
@@ -27,6 +30,8 @@ class BGTask:
         self.status = ''
         self.submitter = ''
         self.time = 0
+        self.start = ''
+        self.end = ''
         self.steps = []
 
         try:
@@ -55,6 +60,8 @@ class BGTask:
                             self.pull_request = attributes[key].strip()
                         case 'submitter':
                             self.submitter = attributes[key].strip()
+                # Collect the start date (format is YYYY.MM.DD HH:MM:SS)
+                self.start = datetime.strptime(input[0:19], '%Y.%m.%d %H:%M:%S')
 
             # The input is a task id
             else:

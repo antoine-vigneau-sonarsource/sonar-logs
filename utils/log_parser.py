@@ -1,6 +1,7 @@
 import fileinput
 import re
 import logging
+from datetime import datetime
 import utils.bgtask as bgtask
 
 log = logging.getLogger(__name__)
@@ -19,10 +20,9 @@ def process_log_files(files, with_steps = False):
                     task_id = re.search('ce\[([^\]]+)\]', line).group(1)
                     if task_id not in tasks:
                         tasks[task_id] = bgtask.BGTask(task_id)
-                    time = int(re.search('time=([0-9]*)ms', line).group(1))
-                    tasks[task_id].time = time
-                    status = re.search('status=([^\s]*)', line).group(1)
-                    tasks[task_id].status = status
+                    tasks[task_id].time = int(re.search('time=([0-9]*)ms', line).group(1))
+                    tasks[task_id].status = re.search('status=([^\s]*)', line).group(1)
+                    tasks[task_id].end = datetime.strptime(line[0:19], '%Y.%m.%d %H:%M:%S')
                 if with_steps and line.find('ComputationStepExecutor') > 0:
                     step = bgtask.BGStep(line)
                     if step.task_id not in tasks:
